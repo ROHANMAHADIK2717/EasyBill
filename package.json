@@ -1,0 +1,39 @@
+{
+  "name": "universal-billing-app",
+  "version": "1.0.0",
+  "description": "A versatile billing application for any business type",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "nodemon --exec electron .",
+    "build": "electron-builder",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "keywords": ["billing", "electron", "desktop", "pos"],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4",
+    "nodemon": "^3.0.1"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "sqlite3": "^5.1.6",
+    "cors": "^2.8.5",
+    "body-parser": "^1.20.2",
+    "uuid": "^9.0.1",
+    "moment": "^2.29.4"
+  },
+  "build": {
+    "appId": "com.yourcompany.billing",
+    "productName": "Universal Billing App",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "node_modules/**/*"
+    ]
+  }
+}

@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Billing App</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            width: 250px;
+        }
+
+        .main-content {
+            margin-left: 250px;
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+        }
+
+        .receipt-print {
+            width: 80mm;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.2;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            .receipt-print,
+            .receipt-print * {
+                visibility: visible;
+            }
+
+            .receipt-print {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 font-sans">
+    <!-- Sidebar -->
+    <div id="sidebar"
+        class="sidebar fixed left-0 top-0 h-full bg-gray-900 text-white z-50 transition-transform duration-300">
+        <div class="p-4 border-b border-gray-700">
+            <h2 class="text-xl font-bold">Billing App</h2>
+            <p class="text-gray-400 text-sm" id="business-name">My Business</p>
+        </div>
+
+        <nav class="mt-4">
+            <div class="px-4 py-2">
+                <button onclick="showSection('dashboard')"
+                    class="nav-item w-full text-left px-4 py-2 rounded hover:bg-gray-700 transition-colors">
+                    <i class="fas fa-tachometer-alt mr-3"></i>Dashboard
+                </button>
+                <button onclick="showSection('new-bill')"
+                    class="nav-item w-full text-left px-4 py-2 rounded hover:bg-gray-700 transition-colors">
+                    <i class="fas fa-plus mr-3"></i>New Bill
+                </button>
+                <button onclick="showSection('bills')"
+                    class="nav-item w-full text-left px-4 py-2 rounded hover:bg-gray-700 transition-colors">
+                    <i class="fas fa-file-invoice mr-3"></i>Bills History
+                </button>
+                <button onclick="showSection('products')"
+                    class="nav-item w-full text-left px-4 py-2 rounded hover:bg-gray-700 transition-colors">
+                    <i class="fas fa-box mr-3"></i>Products
+                </button>
+                <button onclick="showSection('customers')"
+                    class="nav-item w-full text-left px-4 py-2 rounded hover:bg-gray-700 transition-colors">
+                    <i class="fas fa-users mr-3"></i>Customers
+                </button>
+                <button onclick="showSection('reports')"
+                    class="nav-item w-full text-left px-4 py-2 rounded hover:bg-gray-700 transition-colors">
+                    <i class="fas fa-chart-bar mr-3"></i>Reports
+                </button>
+                <button onclick="showSection('settings')"
+                    class="nav-item w-full text-left px-4 py-2 rounded hover:bg-gray-700 transition-colors">
+                    <i class="fas fa-cog mr-3"></i>Settings
+                </button>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Mobile Menu Button -->
+    <button id="mobile-menu-btn" class="lg:hidden fixed top-4 left-4 z-60 bg-gray-900 text-white p-2 rounded">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Main Content -->
+    <div class="main-content min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b border-gray-200 p-4">
+            <div class="flex items-center justify-between">
+                <h1 class="text-2xl font-bold text-gray-800" id="page-title">Dashboard</h1>
+                <div class="flex items-center space-x-4">
+                    <span class="text-gray-600" id="current-time"></span>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-600">Today's Sales</p>
+                        <p class="font-bold text-green-600" id="today-sales">$0.00</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Section -->
+        <div id="dashboard-section" class="section p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <div class="flex items-center">
+                        <div class="bg-blue-500 text-white p-3 rounded-lg mr-4">
+                            <i class="fas fa-file-invoice text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-gray-600 text-sm">Today's Bills</p>
+                            <p class="text-2xl font-bold" id="today-bills">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <div class="flex items-center">
+                        <div class="bg-green-500 text-white p-3 rounded-lg mr-4">
+                            <i class="fas fa-dollar-sign text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-gray-600 text-sm">Today's Sales</p>
+                            <p class="text-2xl font-bold text-green-600" id="dashboard-today-sales">$0.00</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <div class="flex items-center">
+                        <div class="bg-purple-500 text-white p-3 rounded-lg mr-4">
+                            <i class="fas fa-box text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-gray-600 text-sm">Products</p>
+                            <p class="text-2xl font-bold" id="total-products">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <div class="flex items-center">
+                        <div class="bg-orange-500 text-white p-3 rounded-lg mr-4">
+                            <i class="fas fa-users text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-gray-600 text-sm">Customers</p>
+                            <p class="text-2xl font-bold" id="total-customers">0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 class="text-lg font-semibold mb-4">Recent Bills</h3>
+                    <div id="recent-bills" class="space-y-3">
+                        <!-- Recent bills will be loaded here -->
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 class="text-lg font-semibold mb-4">Quick Actions</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <button onclick="showSection('new-bill')"
+                            class="bg-blue-500 text-white p-4 rounded-lg hover:bg-blue-600 transition-colors">
+                            <i class="fas fa-plus text-xl mb-2"></i>
+                            <p>New Bill</p>
+                        </button>
+                        <button onclick="showSection('products')"
+                            class="bg-green-500 text-white p-4 rounded-lg hover:bg-green-600 transition-colors">
+                            <i class="fas fa-box text-xl mb-2"></i>
+                            <p>Add Product</p>
+                        </button>
+                        <button onclick="showSection('customers')"
+                            class="bg-purple-500 text-white p-4 rounded-lg hover:bg-purple-600 transition-colors">
+                            <i class="fas fa-user-plus text-xl mb-2"></i>
+                            <p>Add Customer</p>
+                        </button>
+                        <button onclick="showSection('reports')"
+                            class="bg-orange-500 text-white p-4 rounded-lg hover:bg-orange-600 transition-colors">
+                            <i class="fas fa-chart-bar text-xl mb-2"></i>
+                            <p>View Reports</p>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- New Bill Section -->
+        <div id="new-bill-section" class="section hidden p-6">
+            <div class="max-w-4xl mx-auto">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h2 class="text-2xl font-bold mb-6">Create New Bill</h2>
+
+                    <!-- Customer Selection -->
+                    <div class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Customer</label>
+                            <select id="customer-select"
+                                class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Walk-in Customer</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
+                            <select id="payment-method"
+                                class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="cash">Cash</option>
+                                <option value="card">Card</option>
+                                <option value="upi">UPI</option>
+                                <option value="cheque">Cheque</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Product Search -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Add Product/Item</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="product-search" placeholder="Search products or enter custom item..."
+                                class="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <button onclick="addCustomItem()"
+                                class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                                <i class="fas fa-plus"></i> Custom
+                            </button>
+                        </div>
+                        <div id="product-suggestions"
+                            class="absolute z-10 w-full bg-white border border-gray-300 rounded-lg mt-1 hidden max-h-60 overflow-y-auto">
+                        </div>
+                    </div>
+
+                    <!-- Bill Items Table -->
+                    <div class="mb-6">
+                        <table class="w-full border border-gray-300 rounded-lg overflow-hidden">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="text-left p-3 border-b">Item</th>
+                                    <th class="text-left p-3 border-b w-24">Qty</th>
+                                    <th class="text-left p-3 border-b w-32">Price</th>
+                                    <th class="text-left p-3 border-b w-32">Total</th>
+                                    <th class="w-16 p-3 border-b"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="bill-items">
+                                <tr id="no-items-row">
+                                    <td colspan="5" class="text-center p-8 text-gray-500">No items added</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Bill Summary -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                            <textarea id="bill-notes" rows="4" placeholder="Any additional notes..."
+                                class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                        </div>
+
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="space-y-2">
+                                <div class="flex justify-between">
+                                    <span>Subtotal:</span>
+                                    <span id="subtotal">$0.00</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Discount:</span>
+                                    <input type="number" id="discount-amount" value="0" min="0" step="0.01"
+                                        class="w-20 p-1 border border-gray-300 rounded text-right">
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Tax (<span id="tax-rate">0</span>%):</span>
+                                    <span id="tax-amount">$0.00</span>
+                                </div>
+                                <hr>
+                                <div class="flex justify-between font-bold text-lg">
+                                    <span>Total:</span>
+                                    <span id="total-amount">$0.00</span>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 space-y-3">
+                                <button onclick="saveBill()"
+                                    class="w-full bg-green-500 text-white p-3 rounded-lg hover:bg-green-600 font-semibold">
+                                    <i class="fas fa-save mr-2"></i>Save & Print Bill
+                                </button>
+                                <button onclick="clearBill()"
+                                    class="w-full bg-gray-500 text-white p-2 rounded-lg hover:bg-gray-600">
+                                    <i class="fas fa-trash mr-2"></i>Clear All
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bills History Section -->
+        <div id="bills-section" class="section hidden p-6">
+            <div class="bg-white rounded-lg shadow-sm">
+                <div class="p-6 border-b border-gray-200">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <h2 class="text-2xl font-bold">Bills History</h2>
+                        <div class="flex gap-2">
+                            <input type="date" id="bills-start-date" class="p-2 border border-gray-300 rounded-lg">
+                            <input type="date" id="bills-end-date" class="p-2 border border-gray-300 rounded-lg">
+                            <button onclick="filterBills()"
+                                class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                                <i class="fas fa-search"></i> Filter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="text-left p-4">Bill #</th>
+                                <th class="text-left p-4">Customer</th>
+                                <th class="text-left p-4">Date</th>
+                                <th class="text-left p-4">Amount</th>
+                                <th class="text-left p-4">Payment</th>
+                                <th class="text-left p-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bills-list">
+                            <!-- Bills will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Products Section -->
+        <div id="products-section" class="section hidden p-6">
+            <div class="bg-white rounded-lg shadow-sm">
+                <div class="p-6 border-b border-gray-200">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-2xl font-bold">Products Management</h2>
+                        <button onclick="showAddProductModal()"
+                            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                            <i class="fas fa-plus mr-2"></i>Add Product
+                        </button>
+                    </div>
+                </div>
+
+                <div class="p-6">
+                    <div class="mb-4">
+                        <input type="text" id="products-search" placeholder="Search products..."
+                            class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="text-left p-4">Name</th>
+                                    <th class="text-left p-4">Category</th>
+                                    <th class="text-left p-4">Price</th>
+                                    <th class="text-left p-4">Stock</th>
+                                    <th class="text-left p-4">SKU</th>
+                                    <th class="text-left p-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="products-list">
+                                <!-- Products will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customers Section -->
+        <div id="customers-section" class="section hidden p-6">
+            <div class="bg-white rounded-lg shadow-sm">
+                <div class="p-6 border-b border-gray-200">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-2xl font-bold">Customers Management</h2>
+                        <button onclick="showAddCustomerModal()"
+                            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                            <i class="fas fa-plus mr-2"></i>Add Customer
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="text-left p-4">Name</th>
+                                <th class="text-left p-4">Email</th>
+                                <th class="text-left p-4">Phone</th>
+                                <th class="text-left p-4">Type</th>
+                                <th class="text-left p-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customers-list">
+                            <!-- Customers will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Section -->
+        <div id="reports-section" class="section hidden p-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 class="text-lg font-semibold mb-4">Daily Sales Report</h3>
+                    <div class="mb-4">
+                        <input type="date" id="daily-report-date" class="p-2 border border-gray-300 rounded-lg">
+                        <button onclick="loadDailyReport()"
+                            class="ml-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                            Load Report
+                        </button>
+                    </div>
+                    <div id="daily-report-content">
+                        <!-- Daily report content -->
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 class="text-lg font-semibold mb-4">Monthly Sales Report</h3>
+                    <div class="mb-4">
+                        <input type="month" id="monthly-report-month" class="p-2 border border-gray-300 rounded-lg">
+                        <button onclick="loadMonthlyReport()"
+                            class="ml-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                            Load Report
+                        </button>
+                    </div>
+                    <div id="monthly-report-content">
+                        <!-- Monthly report content -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div id="settings-section" class="section hidden p-6">
+            <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-2xl font-bold mb-6">Business Settings</h2>
+
+                <form id="settings-form">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Business Name</label>
+                            <input type="text" id="business-name-input" required
+                                class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Business Type</label>
+                            <select id="business-type"
+                                class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="general">General Store</option>
+                                <option value="restaurant">Restaurant</option>
+                                <option value="clothing">Clothing Store</option>
+                                <option value="electronics">Electronics</option>
+                                <option value="pharmacy">Pharmacy</option>
+                                <option value="grocery">Grocery Store</option>
+                                <option value="salon">Salon/Spa</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                        <textarea id="business-address" rows="3"
+                            class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                            <input type="tel" id="business-phone"
+                                class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                            <input type="email" id="business-email"
+                                class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+                            <select id="business-currency"
+                                class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="USD">USD ($)</option>
+                                <option value="EUR">EUR (€)</option>
+                                <option value="GBP">GBP (£)</option>
+                                <option value="INR">INR (₹)</option>
+                                <option value="JPY">JPY (¥)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Tax Rate (%)</label>
+                            <input type="number" id="business-tax-rate" min="0" max="100" step="0.01"
+                                class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Tax Number</label>
+                            <input type="text" id="business-tax-number"
+                                class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <button type="submit"
+                        class="w-full bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 font-semibold">
+                        <i class="fas fa-save mr-2"></i>Save Settings
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Add Product Modal -->
+    <div id="add-product-modal"
+        class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white p-6 rounded-lg max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Add New Product</h3>
+                <button onclick="closeModal('add-product-modal')" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <form id="add-product-form">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Product Name</label>
+                        <input type="text" id="product-name" required
+                            class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                        <select id="product-category"
+                            class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Price</label>
+                            <input type="number" id="product-price" step="0.01" required
+                                class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Cost</label>
+                            <input type="number" id="product-cost" step="0.01"
+                                class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Stock Quantity</label>
+                            <input type="number" id="product-stock" min="0"
+                                class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Unit</label>
+                            <input type="text" id="product-unit" placeholder="pcs, kg, ltr..."
+                                class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">SKU</label>
+                        <input type="text" id="product-sku"
+                            class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea id="product-description" rows="2"
+                            class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 mt-6">
+                    <button type="submit" class="flex-1 bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600">
+                        <i class="fas fa-save mr-2"></i>Save Product
+                    </button>
+                    <button type="button" onclick="closeModal('add-product-modal')"
+                        class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Customer Modal -->
+    <div id="add-customer-modal"
+        class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Add New Customer</h3>
+                <button onclick="closeModal('add-customer-modal')" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <form id="add-customer-form">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Customer Name</label>
+                        <input type="text" id="customer-name" required
+                            class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input type="email" id="customer-email"
+                            class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                        <input type="tel" id="customer-phone"
+                            class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                        <textarea id="customer-address" rows="2"
+                            class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Customer Type</label>
+                        <select id="customer-type"
+                            class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="regular">Regular</option>
+                            <option value="vip">VIP</option>
+                            <option value="wholesale">Wholesale</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 mt-6">
+                    <button type="submit" class="flex-1 bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600">
+                        <i class="fas fa-save mr-2"></i>Save Customer
+                    </button>
+                    <button type="button" onclick="closeModal('add-customer-modal')"
+                        class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Receipt Print Area -->
+    <div id="receipt-print" class="receipt-print hidden">
+        <!-- Receipt content will be generated here -->
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+
+</html>
