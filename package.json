@@ -7,27 +7,42 @@
     "start": "electron .",
     "dev": "nodemon --exec electron .",
     "build": "electron-builder",
+    "dist": "electron-builder",
     "postinstall": "electron-builder install-app-deps"
   },
-  "keywords": ["billing", "electron", "desktop", "pos"],
+  "keywords": [
+    "billing",
+    "electron",
+    "desktop",
+    "pos"
+  ],
   "author": "Your Name",
   "license": "MIT",
   "devDependencies": {
     "electron": "^27.0.0",
-    "electron-builder": "^24.6.4",
+    "electron-builder": "^24.13.3",
     "nodemon": "^3.0.1"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "sqlite3": "^5.1.6",
-    "cors": "^2.8.5",
     "body-parser": "^1.20.2",
-    "uuid": "^9.0.1",
-    "moment": "^2.29.4"
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "moment": "^2.29.4",
+    "sqlite3": "^5.1.6",
+    "uuid": "^9.0.1"
   },
   "build": {
     "appId": "com.yourcompany.billing",
     "productName": "Universal Billing App",
+    "mac": {
+      "target": "dmg"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    },
     "directories": {
       "output": "dist"
     },
